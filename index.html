@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DENISIA Launcher | EMPIRE EDITION</title>
+    <style>
+        * { box-sizing: border-box; -webkit-user-select: none; user-select: none; cursor: crosshair; transform: translateZ(0); }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; color: #00BFFF; font-family: 'Arial Black', sans-serif; overflow: hidden; touch-action: none; }
+        #universe-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #001a33 0%, #000 85%); z-index: -10; }
+        .star { position: absolute; background: #00BFFF; border-radius: 50%; animation: twinkle var(--d) infinite ease-in-out; }
+        @keyframes twinkle { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.3); } }
+        
+        .obj { position: fixed; z-index: -2; pointer-events: none; }
+        .ball-3d { width: 60px; height: 60px; border-radius: 50%; animation: bounce 3s ease-in-out infinite; }
+        .blue-ball { background: radial-gradient(circle at 20px 20px, #00BFFF, #000); left: 15%; top: 10%; box-shadow: 0 10px 20px rgba(0, 191, 255, 0.4); }
+        .green-ball { background: radial-gradient(circle at 20px 20px, #00FF00, #000); right: 15%; top: 70%; animation-delay: 1.5s; box-shadow: 0 10px 20px rgba(0, 255, 0, 0.3); }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-300px); } }
+        .ufo { font-size: 50px; animation: flyLR 12s linear infinite; top: 20%; }
+        .rocket { font-size: 40px; animation: flyDiagonal 7s linear infinite; }
+        .unicorn { font-size: 45px; animation: flyRL 10s linear infinite; top: 40%; }
+        @keyframes flyLR { from { left: -100px; } to { left: 110vw; } }
+        @keyframes flyRL { from { right: -100px; } to { right: 110vw; } }
+        @keyframes flyDiagonal { from { transform: translate(-10vw, 100vh) rotate(45deg); } to { transform: translate(110vw, -10vh) rotate(45deg); } }
+
+        #lock-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: #ff0000; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 1000000; text-align: center; padding: 20px; }
+        .btn-pay { display: block; background: #ff0000; color: #fff; padding: 15px 30px; text-decoration: none; font-size: 18px; font-weight: bold; margin-top: 15px; border: none; cursor: pointer; box-shadow: 0 0 15px red; border-radius: 10px; width: 250px; }
+        
+        #main-launcher { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; width: 100%; }
+        .logo { font-size: 80px; text-shadow: 0 0 25px #00BFFF; margin: 0; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; width: 90%; max-width: 900px; z-index: 10; margin-top: 30px; }
+        .game-btn { background: rgba(0, 0, 0, 0.8); border: 2px solid #00BFFF; color: #00BFFF; padding: 20px; text-align: center; font-size: 14px; font-weight: bold; transition: 0.3s; backdrop-filter: blur(10px); cursor: pointer; }
+        .game-btn:hover { background: #00BFFF; color: #000; transform: scale(1.05); }
+        #lease-timer { position: fixed; bottom: 20px; width: 100%; text-align: center; font-size: 22px; color: #00FF00; letter-spacing: 5px; z-index: 20; text-shadow: 0 0 10px #00FF00; font-family: monospace; }
+        .trail { position: fixed; width: 8px; height: 8px; background: #00BFFF; border-radius: 50%; pointer-events: none; z-index: 10000; animation: fade 0.5s forwards; }
+        @keyframes fade { 0% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(3); } }
+        
+        .qr-container { background: #fff; padding: 10px; border-radius: 10px; margin-top: 15px; box-shadow: 0 0 20px #fff; }
+
+        #exit-btn-hint { 
+            display: none; position: fixed; top: 10px; left: 10px; 
+            background: rgba(0, 191, 255, 0.3); color: #00BFFF; 
+            padding: 5px 10px; font-size: 10px; z-index: 600000; 
+            border: 1px solid #00BFFF; border-radius: 5px;
+        }
+        #game-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 500000; }
+        #game-frame { width: 100%; height: 100%; border: none; }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+
+    <div id="universe-bg"></div>
+    <div id="exit-btn-hint">PRESS ESC TO EXIT</div>
+    <div id="game-screen"><iframe id="game-frame" src=""></iframe></div>
+
+    <div id="lock-screen">
+        <h1 style="font-size:60px; text-shadow:0 0 20px red; margin:0;">SYSTEM LOCKED</h1>
+        <p style="color:#fff; font-size:16px;">FREE TRIAL EXPIRED. SCAN QR TO PAY $200 (40 TON).</p>
+        <div class="qr-container"><img id="qr-display" src="" alt="QR Code" style="width:180px; height:180px; display:block;"></div>
+        <button id="p-btn" class="btn-pay" onclick="checkBlockchainPayment()">CHECK PAYMENT</button>
+        <div id="payment-log" style="color:yellow; margin-top:10px;">AWAITING TON TRANSACTION...</div>
+    </div>
+
+    <div id="main-launcher">
+        <div class="obj ball-3d blue-ball"></div><div class="obj ball-3d green-ball"></div> 
+        <div class="obj ufo">🛸</div><div class="obj rocket">🚀</div><div class="obj unicorn">🦄</div>
+        <div class="logo">DENISIA</div>
+        <div id="status-mode" style="font-size: 14px; color: #00FF00;">SYNCING WITH EMPIRE...</div>
+        <div class="grid">
+            <div onclick="playGame('https://denis19sl02-sketch.github.io/Funny-Balls-/')" class="game-btn">Funny Balls</div>
+            <div onclick="playGame('https://denis19sl02-sketch.github.io/Aliens-/')" class="game-btn">Aliens</div>
+            <div onclick="playGame('https://denis19sl02-sketch.github.io/Saving-The-Titanic/')" class="game-btn">Saving The Titanic</div>
+            <div onclick="playGame('https://denis19sl02-sketch.github.io/Racing-Horses-/')" class="game-btn">Racing Horses</div>
+            <div onclick="playGame('https://denis19sl02-sketch.github.io/Zombie-In-Forest-/')" class="game-btn">Dark Woods</div>
+            <div onclick="playGame('https://denis19sl02-sketch.github.io/Funny-Balls-2/')" class="game-btn">Funny Balls 2</div>
+            <div onclick="playGame('https://denis19sl02-sketch.github.io/DENISIAGRAM-/')" class="game-btn">DENISIAGRAM</div>
+        </div>
+        <div id="lease-timer">CONNECTING...</div>
+    </div>
+
+    <script>
+        const WALLET = "UQB0HK2LubFblnzTNWjuchU0CtFjEfFrlRXO23YkwVKaoyHQ";
+        const AMOUNT_NANOTON = 40000000000; 
+        const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+        const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
+        let expiry = 0; let isPaid = false; let userIp = "";
+
+        function playGame(url) {
+            document.getElementById('game-frame').src = url;
+            document.getElementById('game-screen').style.display = 'block';
+            document.getElementById('exit-btn-hint').style.display = 'block';
+            window.focus();
+        }
+
+        function exitGame() {
+            document.getElementById('game-screen').style.display = 'none';
+            document.getElementById('exit-btn-hint').style.display = 'none';
+            document.getElementById('game-frame').src = "";
+        }
+
+        window.addEventListener('keydown', function(e) {
+            if (e.key === "Escape") exitGame();
+            if (e.key === "F12" || (e.ctrlKey && e.shiftKey && e.key === "I")) e.preventDefault();
+        });
+
+        async function initSync() {
+            try {
+                const res = await fetch('https://api.ipify.org?format=json');
+                const data = await res.json();
+                userIp = data.ip.replace(/\./g, '_');
+                let savedExpiry = localStorage.getItem('dn_expiry_' + userIp);
+                isPaid = localStorage.getItem('dn_paid_' + userIp) === 'true';
+                if (!savedExpiry) {
+                    expiry = Date.now() + WEEK_MS;
+                    localStorage.setItem('dn_expiry_' + userIp, expiry);
+                    localStorage.setItem('dn_paid_' + userIp, 'false');
+                } else { expiry = parseInt(savedExpiry); }
+                const payLink = `ton://transfer/${WALLET}?amount=${AMOUNT_NANOTON}`;
+                document.getElementById('qr-display').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(payLink)}`;
+                startTimer();
+            } catch (e) { console.log("Offline mode"); }
+        }
+
+        async function checkBlockchainPayment() {
+            const log = document.getElementById('payment-log');
+            log.innerText = "SCANNING BLOCKCHAIN... PLEASE WAIT";
+            try {
+                const response = await fetch(`https://toncenter.com/api/v2/getTransactions?address=${WALLET}&limit=10`);
+                const result = await response.json();
+                if (result.ok) {
+                    const now = Math.floor(Date.now() / 1000);
+                    const paid = result.result.some(tx => {
+                        const val = parseInt(tx.in_msg.value);
+                        return (now - tx.utime) < 3600 && val >= AMOUNT_NANOTON;
+                    });
+                    if (paid) {
+                        log.innerHTML = "<b style='color:#00FF00;'>PAYMENT CONFIRMED!</b>";
+                        setTimeout(activateMonth, 1500);
+                    } else {
+                        log.innerText = "TRANSACTION NOT FOUND YET. TRY AGAIN IN 1 MINUTE.";
+                    }
+                }
+            } catch (e) { log.innerText = "CONNECTION ERROR. TRY AGAIN."; }
+        }
+
+        function activateMonth() {
+            localStorage.setItem('dn_expiry_' + userIp, Date.now() + MONTH_MS);
+            localStorage.setItem('dn_paid_' + userIp, 'true');
+            location.reload();
+        }
+
+        function startTimer() {
+            setInterval(() => {
+                const diff = expiry - Date.now();
+                if (diff <= 0 && !isPaid) {
+                    document.getElementById('main-launcher').style.display = 'none';
+                    document.getElementById('lock-screen').style.display = 'flex';
+                    exitGame();
+                } else {
+                    const d = Math.floor(diff/86400000), h = Math.floor((diff%86400000)/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000);
+                    document.getElementById('status-mode').innerText = isPaid ? "PREMIUM STATUS: ACTIVE" : "FREE TRIAL: ACTIVE";
+                    document.getElementById('lease-timer').innerText = `LEASE TIME LEFT: ${d}d ${h}h ${m}m ${s}s`;
+                }
+            }, 1000);
+        }
+
+        const universe = document.getElementById('universe-bg');
+        for (let i = 0; i < 80; i++) {
+            const star = document.createElement('div'); star.className = 'star';
+            star.style.width = '2px'; star.style.height = '2px';
+            star.style.left = Math.random() * 100 + '%'; star.style.top = Math.random() * 100 + '%';
+            star.style.setProperty('--d', (Math.random() * 2 + 1) + 's'); universe.appendChild(star);
+        }
+        document.addEventListener('mousemove', e => {
+            const t = document.createElement('div'); t.className = 'trail';
+            t.style.left = e.pageX + 'px'; t.style.top = e.pageY + 'px';
+            document.body.appendChild(t); setTimeout(() => t.remove(), 500);
+        });
+        window.onload = initSync;
+    </script>
+</body>
+</html>
